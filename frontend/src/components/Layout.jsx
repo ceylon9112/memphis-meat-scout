@@ -8,46 +8,50 @@ const navLinks = [
 
 export default function Layout() {
   return (
-    <div className="flex flex-col min-h-dvh bg-cream">
-      {/* Top header */}
-      <header className="bg-charcoal text-cream sticky top-0 z-20 shadow-md">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <NavLink to="/" className="flex items-center gap-2">
-            <span className="text-burnt-orange text-2xl">🔥</span>
-            <span className="font-display text-lg tracking-wide uppercase leading-none">
-              Memphis<br />
-              <span className="text-gold text-sm">Meat Scout</span>
-            </span>
-          </NavLink>
-          <nav className="flex gap-1">
-            {navLinks.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === '/'}
-                className={({ isActive }) =>
-                  `min-tap px-3 py-1 rounded-full text-sm font-medium transition-colors flex items-center ${
-                    isActive
-                      ? 'bg-burnt-orange text-cream'
-                      : 'text-cream/70 hover:text-cream hover:bg-white/10'
-                  }`
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-      </header>
+    <div className="relative flex flex-col min-h-dvh">
+      {/* z-index layer above body pseudo-elements */}
+      <div className="relative z-10 flex flex-col min-h-dvh">
 
-      {/* Page content */}
-      <main className="flex-1 max-w-2xl mx-auto w-full pb-6">
-        <Outlet />
-      </main>
+        {/* Glass header */}
+        <header className="glass-dark sticky top-0 z-20">
+          <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+            <NavLink to="/" className="flex items-center gap-2.5">
+              <span className="text-burnt-orange text-2xl drop-shadow-[0_0_8px_rgba(200,71,26,0.7)]">🔥</span>
+              <span className="font-display text-lg tracking-wide uppercase leading-none">
+                Memphis<br />
+                <span className="text-gold text-sm drop-shadow-[0_0_6px_rgba(232,197,71,0.5)]">Meat Scout</span>
+              </span>
+            </NavLink>
+            <nav className="flex gap-1">
+              {navLinks.map(({ to, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={to === '/'}
+                  className={({ isActive }) =>
+                    `min-tap px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 flex items-center ${
+                      isActive
+                        ? 'bg-burnt-orange/85 text-cream shadow-[0_0_12px_rgba(200,71,26,0.45)]'
+                        : 'text-cream/60 hover:text-cream glass-pill'
+                    }`
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+        </header>
 
-      <footer className="bg-charcoal/5 border-t border-charcoal/10 text-center py-3 text-xs text-ash">
-        Memphis Meat Scout · Deals verified by our team
-      </footer>
+        {/* Page content */}
+        <main className="flex-1 max-w-2xl mx-auto w-full pb-6">
+          <Outlet />
+        </main>
+
+        <footer className="glass-dark border-t border-white/[0.06] text-center py-3 text-xs text-cream/30">
+          Memphis Meat Scout · Deals verified by our team
+        </footer>
+      </div>
     </div>
   )
 }

@@ -2,13 +2,15 @@ const CATEGORIES = ['beef', 'pork', 'poultry', 'seafood', 'other']
 
 export default function FilterBar({ category, setCategory, vendorId, setVendorId, vendors, sortBy, setSortBy }) {
   return (
-    <div className="sticky top-14 z-10 bg-cream/95 backdrop-blur-sm border-b border-charcoal/10 px-4 py-3 space-y-2">
+    <div className="sticky top-14 z-10 glass-dark border-b border-white/[0.07] px-4 py-3 space-y-2">
       {/* Category pills */}
       <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
         <button
           onClick={() => setCategory('')}
-          className={`shrink-0 min-tap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-            !category ? 'bg-burnt-orange text-cream' : 'bg-white border border-charcoal/20 text-ash hover:border-burnt-orange'
+          className={`shrink-0 min-tap px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+            !category
+              ? 'bg-burnt-orange/85 text-cream shadow-[0_0_12px_rgba(200,71,26,0.45)]'
+              : 'glass-pill text-cream/60 hover:text-cream'
           }`}
         >
           All
@@ -17,10 +19,10 @@ export default function FilterBar({ category, setCategory, vendorId, setVendorId
           <button
             key={cat}
             onClick={() => setCategory(category === cat ? '' : cat)}
-            className={`shrink-0 min-tap px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-colors ${
+            className={`shrink-0 min-tap px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-all duration-200 ${
               category === cat
-                ? 'bg-burnt-orange text-cream'
-                : 'bg-white border border-charcoal/20 text-ash hover:border-burnt-orange'
+                ? 'bg-burnt-orange/85 text-cream shadow-[0_0_12px_rgba(200,71,26,0.45)]'
+                : 'glass-pill text-cream/60 hover:text-cream'
             }`}
           >
             {cat}
@@ -33,7 +35,7 @@ export default function FilterBar({ category, setCategory, vendorId, setVendorId
         <select
           value={vendorId}
           onChange={(e) => setVendorId(e.target.value)}
-          className="flex-1 min-tap bg-white border border-charcoal/20 rounded-lg px-3 text-sm text-charcoal focus:outline-none focus:border-burnt-orange"
+          className="flex-1 min-tap glass-input rounded-lg px-3 text-sm focus:outline-none"
         >
           <option value="">All Stores</option>
           {vendors.map((v) => (
@@ -44,7 +46,7 @@ export default function FilterBar({ category, setCategory, vendorId, setVendorId
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="min-tap bg-white border border-charcoal/20 rounded-lg px-3 text-sm text-charcoal focus:outline-none focus:border-burnt-orange"
+          className="min-tap glass-input rounded-lg px-3 text-sm focus:outline-none"
         >
           <option value="recent">Most Recent</option>
           <option value="price_asc">Price: Low → High</option>
