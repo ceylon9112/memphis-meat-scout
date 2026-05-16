@@ -61,15 +61,23 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:${{ steps.tags.outputs.sha }}
 
+      - name: Configure registry credentials on Container Apps
+        run: |
+          for APP in ${{ env.CONTAINER_APP_BACKEND }} ${{ env.CONTAINER_APP_FRONTEND }}; do
+            az containerapp registry set \
+              --name $APP \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --server ${{ env.REGISTRY }} \
+              --username ${{ secrets.AZURE_CLIENT_ID }} \
+              --password "${{ secrets.AZURE_CLIENT_SECRET }}"
+          done
+
       - name: Deploy backend
         run: |
           az containerapp update \
             --name ${{ env.CONTAINER_APP_BACKEND }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:${{ steps.tags.outputs.sha }} \
-            --registry-server ${{ env.REGISTRY }} \
-            --registry-username ${{ secrets.AZURE_CLIENT_ID }} \
-            --registry-password "${{ secrets.AZURE_CLIENT_SECRET }}" \
             --set-env-vars "MONGO_URI=${{ secrets.MONGO_URI }}" "ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}" "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" "KROGER_CLIENT_ID=${{ secrets.KROGER_CLIENT_ID }}" "KROGER_CLIENT_SECRET=${{ secrets.KROGER_CLIENT_SECRET }}"
 
       - name: Deploy frontend
@@ -77,10 +85,7 @@ jobs:
           az containerapp update \
             --name ${{ env.CONTAINER_APP_FRONTEND }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:${{ steps.tags.outputs.sha }} \
-            --registry-server ${{ env.REGISTRY }} \
-            --registry-username ${{ secrets.AZURE_CLIENT_ID }} \
-            --registry-password "${{ secrets.AZURE_CLIENT_SECRET }}"
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:${{ steps.tags.outputs.sha }}
 
       - name: Health check
         run: |
