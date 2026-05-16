@@ -7,7 +7,7 @@ _db = None
 
 async def connect_db():
     global _client, _db
-    url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+    url = os.getenv("MONGO_URI") or os.getenv("MONGODB_URL", "mongodb://localhost:27017")
     db_name = os.getenv("DATABASE_NAME", "memphis_meat_scout")
     _client = AsyncIOMotorClient(url, serverSelectionTimeoutMS=5000)
     _db = _client[db_name]
