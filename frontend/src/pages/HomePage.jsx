@@ -50,7 +50,7 @@ export default function HomePage() {
       <div className="px-4 pt-4 space-y-3">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="glass rounded-2xl h-28 animate-pulse" />
+            <div key={i} className="glass rounded-2xl h-28 animate-pulse bg-white/50" />
           ))
         ) : deals.length === 0 ? (
           <EmptyState message="No current deals for this selection. Check back soon." />

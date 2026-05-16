@@ -2,32 +2,25 @@ const CATEGORIES = ['beef', 'pork', 'poultry', 'seafood', 'other']
 
 export default function FilterBar({ category, setCategory, vendorId, setVendorId, vendors, sortBy, setSortBy }) {
   return (
-    <div className="sticky top-14 z-10 glass-dark border-b border-white/[0.07] px-4 py-3 space-y-2">
+    <div className="sticky top-14 z-10 glass-light-surface border-b border-espresso/[0.08] px-4 py-3 space-y-2">
+
       {/* Category pills */}
       <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
-        <button
-          onClick={() => setCategory('')}
-          className={`shrink-0 min-tap px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-            !category
-              ? 'bg-burnt-orange/85 text-cream shadow-[0_0_12px_rgba(200,71,26,0.45)]'
-              : 'glass-pill text-cream/75 hover:text-cream'
-          }`}
-        >
-          All
-        </button>
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategory(category === cat ? '' : cat)}
-            className={`shrink-0 min-tap px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-all duration-200 ${
-              category === cat
-                ? 'bg-burnt-orange/85 text-cream shadow-[0_0_12px_rgba(200,71,26,0.45)]'
-                : 'glass-pill text-cream/75 hover:text-cream'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+        {['', ...CATEGORIES].map((cat) => {
+          const label = cat === '' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)
+          const isActive = category === cat
+          return (
+            <button
+              key={cat}
+              onClick={() => setCategory(cat)}
+              className={`shrink-0 min-tap px-4 py-1.5 rounded-full text-sm font-semibold capitalize transition-all duration-200 ${
+                isActive ? 'pill-active' : 'glass-pill'
+              }`}
+            >
+              {label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Store + Sort row */}
@@ -35,7 +28,7 @@ export default function FilterBar({ category, setCategory, vendorId, setVendorId
         <select
           value={vendorId}
           onChange={(e) => setVendorId(e.target.value)}
-          className="flex-1 min-tap glass-input rounded-lg px-3 text-sm focus:outline-none"
+          className="flex-1 min-tap glass-input rounded-lg px-3 text-sm transition-all"
         >
           <option value="">All Stores</option>
           {vendors.map((v) => (
@@ -46,7 +39,7 @@ export default function FilterBar({ category, setCategory, vendorId, setVendorId
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="min-tap glass-input rounded-lg px-3 text-sm focus:outline-none"
+          className="min-tap glass-input rounded-lg px-3 text-sm transition-all"
         >
           <option value="recent">Most Recent</option>
           <option value="price_asc">Price: Low → High</option>

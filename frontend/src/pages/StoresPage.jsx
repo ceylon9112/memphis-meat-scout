@@ -2,17 +2,18 @@ import { useState, useEffect } from 'react'
 import { getVendors } from '../api/client'
 
 const typeLabels = {
-  chain: 'Chain',
+  chain:       'Chain',
   independent: 'Independent',
-  specialty: 'Specialty',
-  wholesale: 'Wholesale',
+  specialty:   'Specialty',
+  wholesale:   'Wholesale',
 }
 
-const typeDots = {
-  chain: 'bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.6)]',
-  independent: 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.6)]',
-  specialty: 'bg-burnt-orange shadow-[0_0_6px_rgba(200,71,26,0.6)]',
-  wholesale: 'bg-purple-400 shadow-[0_0_6px_rgba(167,139,250,0.6)]',
+/* Outdoor lifestyle palette — dots and badges */
+const typeBadge = {
+  chain:       'bg-sky/15 text-sky border border-sky/30',
+  independent: 'bg-forest/15 text-forest border border-forest/30',
+  specialty:   'bg-ember/15 text-ember border border-ember/30',
+  wholesale:   'bg-amber/15 text-amber border border-amber/30',
 }
 
 export default function StoresPage() {
@@ -27,9 +28,9 @@ export default function StoresPage() {
   }, [])
 
   return (
-    <div className="px-4 py-4">
-      <h1 className="font-display text-2xl text-cream uppercase mb-1 drop-shadow-sm">Stores</h1>
-      <p className="text-cream/65 text-sm mb-5">All verified vendors in the Memphis area.</p>
+    <div className="px-4 py-5">
+      <h1 className="font-display text-2xl text-espresso uppercase mb-1 tracking-wide">Stores</h1>
+      <p className="text-bark text-sm mb-5">All verified vendors in the Memphis area.</p>
 
       {loading ? (
         <div className="space-y-2">
@@ -38,24 +39,20 @@ export default function StoresPage() {
           ))}
         </div>
       ) : vendors.length === 0 ? (
-        <p className="text-cream/60 text-center py-8">No stores listed yet.</p>
+        <p className="text-driftwood text-center py-10">No stores listed yet.</p>
       ) : (
         <div className="space-y-2">
           {vendors.map((v) => (
-            <div
-              key={v.id}
-              className="glass-card px-4 py-3 flex items-center justify-between"
-            >
+            <div key={v.id} className="glass-card px-4 py-3 flex items-center justify-between">
               <div>
-                <p className="font-medium text-cream text-sm">{v.name}</p>
-                <p className="text-xs text-cream/60 mt-0.5">
+                <p className="font-semibold text-espresso text-sm">{v.name}</p>
+                <p className="text-xs text-driftwood mt-0.5">
                   {v.city}, {v.state}
                 </p>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${typeDots[v.type] || 'bg-cream/60'}`} />
-                <span className="text-xs text-cream/60">{typeLabels[v.type] || v.type}</span>
-              </div>
+              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${typeBadge[v.type] || 'bg-driftwood/10 text-driftwood border border-driftwood/20'}`}>
+                {typeLabels[v.type] || v.type}
+              </span>
             </div>
           ))}
         </div>
