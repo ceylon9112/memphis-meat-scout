@@ -16,7 +16,13 @@ app = FastAPI(title="Memphis Meat Scout API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "https://meatscout-frontend.gentlestone-8cc45036.eastus.azurecontainerapps.io",
+        "https://meatscout-backend.gentlestone-8cc45036.eastus.azurecontainerapps.io",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,7 +34,10 @@ _scheduler = AsyncIOScheduler()
 @app.on_event("startup")
 async def startup():
     await connect_db()
-    await seed_database()
+    try:
+        await seed_database()
+    except Exception as e:
+        print(f"⚠ Seed skipped (DB not ready): {e}")
     # Schedule daily discovery at 6:00 AM
     _scheduler.add_job(run_discovery, "cron", hour=6, minute=0, id="daily_discovery")
     _scheduler.start()
@@ -40,6 +49,7 @@ async def shutdown():
     await close_db()
 
 
+@app.get("/health")
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
