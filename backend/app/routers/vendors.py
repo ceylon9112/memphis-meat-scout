@@ -8,5 +8,6 @@ router = APIRouter()
 @router.get("/vendors")
 async def list_vendors():
     db = get_db()
-    vendors = await db.vendors.find({"active": True}).sort("name", 1).to_list(500)
+    vendors = await db.vendors.find({"active": True}).to_list(500)
+    vendors.sort(key=lambda v: v.get("name", "").lower())
     return [doc_to_vendor(v) for v in vendors]

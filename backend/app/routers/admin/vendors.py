@@ -12,7 +12,8 @@ router = APIRouter()
 @router.get("/vendors")
 async def list_vendors(username: str = Depends(verify_token)):
     db = get_db()
-    vendors = await db.vendors.find({}).sort("name", 1).to_list(500)
+    vendors = await db.vendors.find({}).to_list(500)
+    vendors.sort(key=lambda v: v.get("name", "").lower())
     return [doc_to_vendor(v) for v in vendors]
 
 

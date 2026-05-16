@@ -12,7 +12,8 @@ router = APIRouter()
 @router.get("/cuts")
 async def list_cuts(username: str = Depends(verify_token)):
     db = get_db()
-    cuts = await db.meat_cuts.find({}).sort("name", 1).to_list(500)
+    cuts = await db.meat_cuts.find({}).to_list(500)
+    cuts.sort(key=lambda c: c.get("name", "").lower())
     return [doc_to_cut(c) for c in cuts]
 
 

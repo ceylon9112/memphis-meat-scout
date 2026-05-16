@@ -59,7 +59,8 @@ async def list_staged(
     query = {}
     if status:
         query["status"] = status
-    docs = await db.staged_deals.find(query).sort("created_at", -1).to_list(500)
+    docs = await db.staged_deals.find(query).to_list(500)
+    docs.sort(key=lambda d: d.get("created_at", ""), reverse=True)
     return [serialize_staged(d) for d in docs]
 
 
