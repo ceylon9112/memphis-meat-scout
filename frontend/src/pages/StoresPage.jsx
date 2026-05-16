@@ -29,7 +29,7 @@ export default function StoresPage() {
   return (
     <div className="px-4 py-4">
       <h1 className="font-display text-2xl text-cream uppercase mb-1 drop-shadow-sm">Stores</h1>
-      <p className="text-cream/45 text-sm mb-5">All verified vendors in the Memphis area.</p>
+      <p className="text-cream/65 text-sm mb-5">All verified vendors in the Memphis area.</p>
 
       {loading ? (
         <div className="space-y-2">
@@ -38,7 +38,7 @@ export default function StoresPage() {
           ))}
         </div>
       ) : vendors.length === 0 ? (
-        <p className="text-cream/40 text-center py-8">No stores listed yet.</p>
+        <p className="text-cream/60 text-center py-8">No stores listed yet.</p>
       ) : (
         <div className="space-y-2">
           {vendors.map((v) => (
@@ -48,13 +48,13 @@ export default function StoresPage() {
             >
               <div>
                 <p className="font-medium text-cream text-sm">{v.name}</p>
-                <p className="text-xs text-cream/40 mt-0.5">
+                <p className="text-xs text-cream/60 mt-0.5">
                   {v.city}, {v.state}
                 </p>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${typeDots[v.type] || 'bg-cream/40'}`} />
-                <span className="text-xs text-cream/40">{typeLabels[v.type] || v.type}</span>
+                <span className={`w-2 h-2 rounded-full ${typeDots[v.type] || 'bg-cream/60'}`} />
+                <span className="text-xs text-cream/60">{typeLabels[v.type] || v.type}</span>
               </div>
             </div>
           ))}

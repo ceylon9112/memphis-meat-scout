@@ -12,11 +12,11 @@ function formatDate(dateStr) {
 }
 
 const categoryStyles = {
-  beef:    { pill: 'bg-red-500/20 text-red-300 border border-red-500/25',    glow: 'rgba(239,68,68,0.15)' },
-  pork:    { pill: 'bg-pink-500/20 text-pink-300 border border-pink-500/25',  glow: 'rgba(236,72,153,0.12)' },
-  poultry: { pill: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/25', glow: 'rgba(234,179,8,0.12)' },
-  seafood: { pill: 'bg-blue-500/20 text-blue-300 border border-blue-500/25',  glow: 'rgba(59,130,246,0.12)' },
-  other:   { pill: 'bg-white/10 text-cream/60 border border-white/10',        glow: 'rgba(255,255,255,0.05)' },
+  beef:    { pill: 'bg-red-500/30 text-red-200 border border-red-400/40',        glow: 'rgba(239,68,68,0.18)' },
+  pork:    { pill: 'bg-pink-500/30 text-pink-200 border border-pink-400/40',      glow: 'rgba(236,72,153,0.15)' },
+  poultry: { pill: 'bg-yellow-500/30 text-yellow-200 border border-yellow-400/40', glow: 'rgba(234,179,8,0.15)' },
+  seafood: { pill: 'bg-blue-500/30 text-blue-200 border border-blue-400/40',      glow: 'rgba(59,130,246,0.15)' },
+  other:   { pill: 'bg-white/15 text-cream/80 border border-white/20',            glow: 'rgba(255,255,255,0.06)' },
 }
 
 export default function DealCard({ deal }) {
@@ -34,12 +34,12 @@ export default function DealCard({ deal }) {
             <h3 className="font-display text-lg leading-tight text-cream truncate drop-shadow-sm">
               {cut_name}
             </h3>
-            <p className="text-sm text-cream/50 mt-0.5 truncate">{vendor_name}</p>
+            <p className="text-sm text-cream/65 mt-0.5 truncate">{vendor_name}</p>
           </div>
           <div className="text-right shrink-0">
             <p className="font-display text-2xl text-burnt-orange leading-tight drop-shadow-[0_0_8px_rgba(200,71,26,0.5)]">
               ${Number(price).toFixed(2)}
-              <span className="text-sm text-cream/40 font-body font-normal">
+              <span className="text-sm text-cream/55 font-body font-normal">
                 {UNIT_LABELS[price_unit] || ''}
               </span>
             </p>
@@ -50,13 +50,13 @@ export default function DealCard({ deal }) {
           <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full capitalize ${styles.pill}`}>
             {category}
           </span>
-          <span className="text-xs text-cream/35">
+          <span className="text-xs text-cream/55">
             ✓ Verified {formatDate(verified_date)}
           </span>
         </div>
 
         {notes && (
-          <p className="mt-2.5 text-xs text-cream/45 italic border-t border-white/[0.08] pt-2.5 leading-relaxed">
+          <p className="mt-2.5 text-xs text-cream/60 italic border-t border-white/[0.12] pt-2.5 leading-relaxed">
             {notes}
           </p>
         )}

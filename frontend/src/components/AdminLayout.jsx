@@ -36,7 +36,7 @@ export default function AdminLayout() {
                       `px-3 py-1 rounded text-sm min-tap flex items-center transition-all duration-200 ${
                         isActive
                           ? 'bg-burnt-orange/85 text-cream shadow-[0_0_10px_rgba(200,71,26,0.4)]'
-                          : 'text-cream/55 hover:text-cream glass-pill'
+                          : 'text-cream/75 hover:text-cream glass-pill'
                       }`
                     }
                   >
@@ -60,7 +60,7 @@ export default function AdminLayout() {
                 to={to}
                 className={({ isActive }) =>
                   `flex-1 text-center py-2 text-xs min-tap flex items-center justify-center transition-all ${
-                    isActive ? 'text-gold border-b-2 border-gold drop-shadow-[0_0_4px_rgba(232,197,71,0.5)]' : 'text-cream/45'
+                    isActive ? 'text-gold border-b-2 border-gold drop-shadow-[0_0_4px_rgba(232,197,71,0.5)]' : 'text-cream/65'
                   }`
                 }
               >

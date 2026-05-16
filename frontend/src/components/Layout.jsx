@@ -32,7 +32,7 @@ export default function Layout() {
                     `min-tap px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 flex items-center ${
                       isActive
                         ? 'bg-burnt-orange/85 text-cream shadow-[0_0_12px_rgba(200,71,26,0.45)]'
-                        : 'text-cream/60 hover:text-cream glass-pill'
+                        : 'text-cream/75 hover:text-cream glass-pill'
                     }`
                   }
                 >
@@ -48,7 +48,7 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        <footer className="glass-dark border-t border-white/[0.06] text-center py-3 text-xs text-cream/30">
+        <footer className="glass-dark border-t border-white/[0.10] text-center py-3 text-xs text-cream/50">
           Memphis Meat Scout · Deals verified by our team
         </footer>
       </div>

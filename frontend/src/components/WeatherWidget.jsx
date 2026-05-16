@@ -16,8 +16,8 @@ function DayCard({ label, high, precip_pct, wind_mph }) {
         {label}
       </p>
       <p className="text-cream text-2xl font-display leading-none">{high}°</p>
-      <p className="text-cream/50 text-xs mt-2">🌧 {precip_pct}%</p>
-      <p className="text-cream/50 text-xs mt-0.5">
+      <p className="text-cream/65 text-xs mt-2">🌧 {precip_pct}%</p>
+      <p className="text-cream/65 text-xs mt-0.5">
         <WindIcon />{wind_mph} mph
       </p>
     </div>
@@ -48,7 +48,7 @@ export default function WeatherWidget() {
         <h2 className="font-display text-gold text-sm uppercase tracking-widest drop-shadow-[0_0_6px_rgba(232,197,71,0.45)]">
           🔥 Cookout Forecast
         </h2>
-        <span className="text-cream/30 text-xs">Memphis, TN</span>
+        <span className="text-cream/50 text-xs">Memphis, TN</span>
       </div>
 
       {loading && (
@@ -60,7 +60,7 @@ export default function WeatherWidget() {
       )}
 
       {error && !loading && (
-        <p className="text-cream/40 text-sm text-center py-3">
+        <p className="text-cream/55 text-sm text-center py-3">
           Forecast temporarily unavailable.
         </p>
       )}

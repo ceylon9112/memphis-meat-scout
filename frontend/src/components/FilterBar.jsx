@@ -10,7 +10,7 @@ export default function FilterBar({ category, setCategory, vendorId, setVendorId
           className={`shrink-0 min-tap px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
             !category
               ? 'bg-burnt-orange/85 text-cream shadow-[0_0_12px_rgba(200,71,26,0.45)]'
-              : 'glass-pill text-cream/60 hover:text-cream'
+              : 'glass-pill text-cream/75 hover:text-cream'
           }`}
         >
           All
@@ -22,7 +22,7 @@ export default function FilterBar({ category, setCategory, vendorId, setVendorId
             className={`shrink-0 min-tap px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-all duration-200 ${
               category === cat
                 ? 'bg-burnt-orange/85 text-cream shadow-[0_0_12px_rgba(200,71,26,0.45)]'
-                : 'glass-pill text-cream/60 hover:text-cream'
+                : 'glass-pill text-cream/75 hover:text-cream'
             }`}
           >
             {cat}
