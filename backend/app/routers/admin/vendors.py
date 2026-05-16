@@ -37,7 +37,7 @@ async def update_vendor(vendor_id: str, body: VendorUpdate, username: str = Depe
     if not await db.vendors.find_one({"_id": oid}):
         raise HTTPException(status_code=404, detail="Vendor not found")
 
-    update = {k: v for k, v in body.model_dump().items() if v is not None}
+    update = {k: v for k, v in body.model_dump().items() if v is not None or k == "featured"}
     await db.vendors.update_one({"_id": oid}, {"$set": update})
     updated = await db.vendors.find_one({"_id": oid})
     return doc_to_vendor(updated)

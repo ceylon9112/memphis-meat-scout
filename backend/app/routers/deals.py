@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query
 from typing import Optional
 from datetime import date, timedelta
 from ..database import get_db
-from ..utils import fetch_deals_with_join
+from ..utils import fetch_deals_with_join, zip_to_coords, haversine
 
 router = APIRouter()
 
@@ -17,6 +17,8 @@ async def list_deals(
     vendor_id: Optional[str] = Query(None),
     cut_id: Optional[str] = Query(None),
     sort: Optional[str] = Query("recent"),
+    zip: Optional[str] = Query(None, description="US zip code for proximity filter"),
+    radius: float = Query(50, description="Search radius in miles"),
 ):
     from bson import ObjectId
 
@@ -33,6 +35,20 @@ async def list_deals(
             query["cut_id"] = ObjectId(cut_id)
         except Exception:
             return []
+
+    # If a zip is supplied, restrict to vendors within the radius first
+    if zip and not vendor_id:
+        user_lat, user_lng = await zip_to_coords(zip)
+        if user_lat is not None and user_lng is not None:
+            nearby = await db.vendors.find(
+                {"active": True, "lat": {"$ne": None}, "lng": {"$ne": None}}
+            ).to_list(1000)
+            nearby_ids = [
+                v["_id"] for v in nearby
+                if haversine(user_lat, user_lng, v["lat"], v["lng"]) <= radius
+            ]
+            if nearby_ids:
+                query["vendor_id"] = {"$in": nearby_ids}
 
     result = await fetch_deals_with_join(db, query)
 

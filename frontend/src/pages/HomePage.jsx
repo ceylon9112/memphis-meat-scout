@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { getDeals, getVendors } from '../api/client'
+import { useZipPreference } from '../hooks/useZipPreference'
 import WeatherWidget from '../components/WeatherWidget'
+import ZipBar from '../components/ZipBar'
 import FilterBar from '../components/FilterBar'
 import DealCard from '../components/DealCard'
 import EmptyState from '../components/EmptyState'
@@ -12,15 +14,18 @@ export default function HomePage() {
   const [category, setCategory] = useState('')
   const [vendorId, setVendorId] = useState('')
   const [sortBy, setSortBy] = useState('recent')
+  const [zip, setZip] = useZipPreference()
 
   useEffect(() => {
-    getVendors().then(setVendors).catch(() => {})
-  }, [])
+    const params = zip ? { zip } : {}
+    getVendors(params).then(setVendors).catch(() => {})
+  }, [zip])
 
   useEffect(() => {
     setLoading(true)
     const params = { sort: sortBy }
     if (vendorId) params.vendor_id = vendorId
+    if (zip && !vendorId) params.zip = zip
     getDeals(params)
       .then((data) => {
         if (category) {
@@ -31,11 +36,18 @@ export default function HomePage() {
       })
       .catch(() => setDeals([]))
       .finally(() => setLoading(false))
-  }, [category, vendorId, sortBy])
+  }, [category, vendorId, sortBy, zip])
+
+  const handleZipChange = (newZip) => {
+    setZip(newZip)
+    setVendorId('')  // reset store filter when zip changes
+  }
 
   return (
     <>
       <WeatherWidget />
+
+      <ZipBar zip={zip} onZip={handleZipChange} />
 
       <FilterBar
         category={category}
@@ -53,7 +65,11 @@ export default function HomePage() {
             <div key={i} className="glass rounded-2xl h-28 animate-pulse bg-white/50" />
           ))
         ) : deals.length === 0 ? (
-          <EmptyState message="No current deals for this selection. Check back soon." />
+          <EmptyState message={
+            zip
+              ? `No current deals found within 50 miles of ${zip}. Try a different zip or clear the location filter.`
+              : 'No current deals for this selection. Check back soon.'
+          } />
         ) : (
           deals.map((deal) => <DealCard key={deal.id} deal={deal} />)
         )}

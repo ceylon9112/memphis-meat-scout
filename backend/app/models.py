@@ -8,9 +8,14 @@ from datetime import datetime
 class VendorBase(BaseModel):
     name: str
     city: str
-    state: Literal["TN", "MS"]
+    state: str
     type: Literal["chain", "independent", "specialty", "wholesale"]
     active: bool = True
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    zip_code: Optional[str] = None
+    address: Optional[str] = None
+    featured: bool = False
 
 
 class VendorCreate(VendorBase):
@@ -20,14 +25,20 @@ class VendorCreate(VendorBase):
 class VendorUpdate(BaseModel):
     name: Optional[str] = None
     city: Optional[str] = None
-    state: Optional[Literal["TN", "MS"]] = None
+    state: Optional[str] = None
     type: Optional[Literal["chain", "independent", "specialty", "wholesale"]] = None
     active: Optional[bool] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    zip_code: Optional[str] = None
+    address: Optional[str] = None
+    featured: Optional[bool] = None
 
 
 class VendorResponse(VendorBase):
     id: str
     created_at: datetime
+    distance_miles: Optional[float] = None
 
 
 # ─── Meat Cut ─────────────────────────────────────────────────────────────────

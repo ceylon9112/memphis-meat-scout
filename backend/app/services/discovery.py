@@ -4,6 +4,9 @@ staged_deals collection for admin review.
 
 High-confidence matches (>= AUTO_APPROVE_THRESHOLD) are promoted directly
 to the live deals collection without requiring manual approval.
+
+Flipp runs for every market zip code in MARKET_ZIPS so that chain stores
+across Nashville, Birmingham, etc. are automatically discovered.
 """
 import asyncio
 from datetime import datetime, date
@@ -20,6 +23,17 @@ _last_run: datetime | None = None
 _running: bool = False
 
 AUTO_APPROVE_THRESHOLD = 0.70   # deals at or above this confidence go live immediately
+
+# One representative zip per market — Flipp covers all stores within ~25 mi
+MARKET_ZIPS = [
+    "38103",  # Memphis, TN (downtown)
+    "38138",  # Germantown, TN
+    "37201",  # Nashville, TN
+    "35203",  # Birmingham, AL
+    "72201",  # Little Rock, AR
+    "39201",  # Jackson, MS
+    "37902",  # Knoxville, TN
+]
 
 
 async def auto_approve_pending(db) -> int:
@@ -116,6 +130,7 @@ async def run_discovery() -> dict:
         "flipp": 0, "ramons": 0, "traderjoes": 0, "wholefoods": 0,
         "freshmarket": 0, "kroger": 0, "skipped_duplicates": 0,
         "auto_approved": 0, "errors": [],
+        "markets_scanned": len(MARKET_ZIPS),
     }
 
     try:
@@ -123,24 +138,30 @@ async def run_discovery() -> dict:
         db = get_db()
 
         kroger_task    = asyncio.create_task(fetch_kroger_deals())
-        flipp_task     = asyncio.create_task(fetch_flipp_deals())
         ramons_task    = asyncio.create_task(fetch_ramons_deals())
         tj_task        = asyncio.create_task(fetch_traderjoes_deals())
         wf_task        = asyncio.create_task(fetch_wholefoods_deals())
         fm_task        = asyncio.create_task(fetch_freshmarket_deals())
+        flipp_tasks    = [asyncio.create_task(fetch_flipp_deals(z)) for z in MARKET_ZIPS]
 
-        kroger_results, flipp_results, ramons_results, tj_results, wf_results, fm_results = \
+        kroger_results, ramons_results, tj_results, wf_results, fm_results, *flipp_lists = \
             await asyncio.gather(
-                kroger_task, flipp_task, ramons_task, tj_task, wf_task, fm_task,
+                kroger_task, ramons_task, tj_task, wf_task, fm_task, *flipp_tasks,
                 return_exceptions=True,
             )
 
         if isinstance(kroger_results,  Exception): summary["errors"].append(f"Kroger: {kroger_results}");       kroger_results  = []
-        if isinstance(flipp_results,   Exception): summary["errors"].append(f"Flipp: {flipp_results}");         flipp_results   = []
         if isinstance(ramons_results,  Exception): summary["errors"].append(f"Ramon's: {ramons_results}");      ramons_results  = []
         if isinstance(tj_results,      Exception): summary["errors"].append(f"Trader Joe's: {tj_results}");     tj_results      = []
         if isinstance(wf_results,      Exception): summary["errors"].append(f"Whole Foods: {wf_results}");      wf_results      = []
         if isinstance(fm_results,      Exception): summary["errors"].append(f"Fresh Market: {fm_results}");     fm_results      = []
+
+        flipp_results: list[dict] = []
+        for i, fl in enumerate(flipp_lists):
+            if isinstance(fl, Exception):
+                summary["errors"].append(f"Flipp ({MARKET_ZIPS[i]}): {fl}")
+            else:
+                flipp_results.extend(fl)
 
         all_candidates = kroger_results + flipp_results + ramons_results + tj_results + wf_results + fm_results
 

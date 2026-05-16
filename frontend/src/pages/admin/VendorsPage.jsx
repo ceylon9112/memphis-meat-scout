@@ -2,13 +2,21 @@ import { useState, useEffect, useCallback } from 'react'
 import { adminGetVendors, adminCreateVendor, adminUpdateVendor, adminDeactivateVendor } from '../../api/client'
 import AdminModal from '../../components/AdminModal'
 
-const STATES = ['TN', 'MS']
+const STATES = [
+  'TN','MS','AL','AR','KY','GA','FL','TX','LA','MO','VA','NC','SC','OK',
+]
 const TYPES = ['chain', 'independent', 'specialty', 'wholesale']
 
 function VendorForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState({
-    name: '', city: '', state: 'TN', type: 'independent', active: true,
+    name: '', city: '', state: 'TN', type: 'independent',
+    active: true, featured: false,
+    zip_code: '', address: '', lat: '', lng: '',
     ...initial,
+    lat: initial?.lat ?? '',
+    lng: initial?.lng ?? '',
+    zip_code: initial?.zip_code ?? '',
+    address: initial?.address ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -22,9 +30,20 @@ function VendorForm({ initial, onSave, onCancel }) {
     e.preventDefault()
     if (!form.name || !form.city) { setError('Name and city are required.'); return }
     setSaving(true); setError('')
-    try { await onSave(form) }
-    catch (err) { setError(err?.response?.data?.detail || 'Save failed.') }
-    finally { setSaving(false) }
+    try {
+      const payload = {
+        ...form,
+        lat: form.lat !== '' ? parseFloat(form.lat) : null,
+        lng: form.lng !== '' ? parseFloat(form.lng) : null,
+        zip_code: form.zip_code || null,
+        address: form.address || null,
+      }
+      await onSave(payload)
+    } catch (err) {
+      setError(err?.response?.data?.detail || 'Save failed.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -34,10 +53,22 @@ function VendorForm({ initial, onSave, onCancel }) {
         <input value={form.name} onChange={set('name')} required
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-burnt-orange" />
       </div>
+
+      <div>
+        <label className="block text-sm font-medium text-charcoal mb-1">Address</label>
+        <input value={form.address} onChange={set('address')} placeholder="123 Main St"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-burnt-orange" />
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-charcoal mb-1">City *</label>
           <input value={form.city} onChange={set('city')} required
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-burnt-orange" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-charcoal mb-1">Zip Code</label>
+          <input value={form.zip_code} onChange={set('zip_code')} maxLength={5} placeholder="38103"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-burnt-orange" />
         </div>
         <div>
@@ -54,14 +85,34 @@ function VendorForm({ initial, onSave, onCancel }) {
             {TYPES.map(t => <option key={t} value={t} className="capitalize">{t}</option>)}
           </select>
         </div>
-        <div className="flex items-end pb-2">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={form.active} onChange={set('active')}
-              className="w-4 h-4 accent-burnt-orange" />
-            <span className="text-sm font-medium text-charcoal">Active</span>
-          </label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-charcoal mb-1">Latitude</label>
+          <input value={form.lat} onChange={set('lat')} type="number" step="0.0001" placeholder="35.1495"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-burnt-orange" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-charcoal mb-1">Longitude</label>
+          <input value={form.lng} onChange={set('lng')} type="number" step="0.0001" placeholder="-90.0490"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-burnt-orange" />
         </div>
       </div>
+
+      <div className="flex gap-6">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={form.active} onChange={set('active')}
+            className="w-4 h-4 accent-burnt-orange" />
+          <span className="text-sm font-medium text-charcoal">Active</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer" title="Featured partners appear at the top of listings">
+          <input type="checkbox" checked={form.featured} onChange={set('featured')}
+            className="w-4 h-4 accent-amber-500" />
+          <span className="text-sm font-medium text-charcoal">★ Featured Partner</span>
+        </label>
+      </div>
+
       {error && <p className="text-red-500 text-sm">{error}</p>}
       <div className="flex gap-3 pt-1">
         <button type="submit" disabled={saving}
@@ -116,6 +167,7 @@ export default function VendorsPage() {
                 <th className="px-4 py-3 text-left">Name</th>
                 <th className="px-4 py-3 text-left">City</th>
                 <th className="px-4 py-3 text-left">State</th>
+                <th className="px-4 py-3 text-left">Zip</th>
                 <th className="px-4 py-3 text-left">Type</th>
                 <th className="px-4 py-3 text-left">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
@@ -123,12 +175,16 @@ export default function VendorsPage() {
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
               {vendors.length === 0
-                ? <tr><td colSpan={6} className="text-center py-8 text-ash">No vendors yet.</td></tr>
+                ? <tr><td colSpan={7} className="text-center py-8 text-ash">No vendors yet.</td></tr>
                 : vendors.map(v => (
                   <tr key={v.id} className={`hover:bg-gray-50 ${!v.active ? 'opacity-50' : ''}`}>
-                    <td className="px-4 py-3 font-medium text-charcoal">{v.name}</td>
+                    <td className="px-4 py-3 font-medium text-charcoal">
+                      {v.featured && <span className="text-amber-500 mr-1" title="Featured">★</span>}
+                      {v.name}
+                    </td>
                     <td className="px-4 py-3 text-ash">{v.city}</td>
                     <td className="px-4 py-3 text-ash">{v.state}</td>
+                    <td className="px-4 py-3 text-ash">{v.zip_code || '—'}</td>
                     <td className="px-4 py-3 capitalize text-ash">{v.type}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${v.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>

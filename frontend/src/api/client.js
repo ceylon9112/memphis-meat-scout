@@ -14,7 +14,7 @@ api.interceptors.request.use((config) => {
 export const getDeals = (params = {}) => api.get('/deals', { params }).then(r => r.data)
 export const getCuts = () => api.get('/cuts').then(r => r.data)
 export const getCutPrices = (id) => api.get(`/cuts/${id}/prices`).then(r => r.data)
-export const getVendors = () => api.get('/vendors').then(r => r.data)
+export const getVendors = (params = {}) => api.get('/vendors', { params }).then(r => r.data)
 export const getWeather = () => api.get('/weather').then(r => r.data)
 
 // ─── Admin auth ───────────────────────────────────────────────────────────────

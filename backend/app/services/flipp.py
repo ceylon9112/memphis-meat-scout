@@ -14,7 +14,7 @@ from datetime import date
 from .cut_matcher import match_cut, is_meat_product, infer_price_unit
 
 WISHABI_BASE = "https://backflipp.wishabi.com/flipp"
-MEMPHIS_ZIP = "38103"
+DEFAULT_ZIP = "38103"  # Memphis, TN — used when no zip is specified
 
 FOOD_MERCHANTS = {
     "kroger", "aldi", "market place", "superlo foods", "sprouts farmers market",
@@ -66,9 +66,10 @@ def _infer_sale_end(valid_to: str | None) -> str | None:
         return None
 
 
-async def fetch_flipp_deals() -> list[dict]:
+async def fetch_flipp_deals(postal_code: str = DEFAULT_ZIP) -> list[dict]:
     """
-    Returns normalized staged deal candidates from Memphis-area weekly flyers.
+    Returns normalized staged deal candidates from weekly flyers near ``postal_code``.
+    Defaults to Memphis, TN (38103).  Pass any US zip to discover deals in other markets.
     """
     results: list[dict] = []
     seen: set[str] = set()
@@ -76,10 +77,10 @@ async def fetch_flipp_deals() -> list[dict]:
 
     try:
         async with httpx.AsyncClient(timeout=20.0, follow_redirects=True, headers=HEADERS) as client:
-            # Step 1: get all flyers for Memphis zip
+            # Step 1: get all flyers for the given zip
             resp = await client.get(
                 f"{WISHABI_BASE}/flyers",
-                params={"locale": "en-us", "postal_code": MEMPHIS_ZIP},
+                params={"locale": "en-us", "postal_code": postal_code},
             )
             resp.raise_for_status()
             flyers = resp.json().get("flyers", [])

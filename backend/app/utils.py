@@ -1,6 +1,42 @@
 from bson import ObjectId
 from datetime import datetime
+from math import radians, sin, cos, sqrt, atan2
+from typing import Optional
+import httpx
 
+# ─── Geo helpers ──────────────────────────────────────────────────────────────
+
+_zip_cache: dict[str, tuple[float, float]] = {}
+
+
+def haversine(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """Return distance in miles between two lat/lng points."""
+    R = 3958.8
+    dlat = radians(lat2 - lat1)
+    dlng = radians(lng2 - lng1)
+    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlng / 2) ** 2
+    return R * 2 * atan2(sqrt(a), sqrt(1 - a))
+
+
+async def zip_to_coords(zip_code: str) -> tuple[Optional[float], Optional[float]]:
+    """Convert a US zip code to (lat, lng) using the free zippopotam.us API."""
+    zip_code = zip_code.strip()
+    if zip_code in _zip_cache:
+        return _zip_cache[zip_code]
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(f"https://api.zippopotam.us/us/{zip_code}")
+            if resp.status_code == 200:
+                place = resp.json()["places"][0]
+                coords = float(place["latitude"]), float(place["longitude"])
+                _zip_cache[zip_code] = coords
+                return coords
+    except Exception:
+        pass
+    return None, None
+
+
+# ─── Document serialisers ─────────────────────────────────────────────────────
 
 def doc_to_vendor(doc: dict) -> dict:
     return {
@@ -10,6 +46,12 @@ def doc_to_vendor(doc: dict) -> dict:
         "state": doc["state"],
         "type": doc["type"],
         "active": doc["active"],
+        "featured": doc.get("featured", False),
+        "lat": doc.get("lat"),
+        "lng": doc.get("lng"),
+        "zip_code": doc.get("zip_code"),
+        "address": doc.get("address"),
+        "distance_miles": doc.get("_distance"),
         "created_at": doc["created_at"],
     }
 
