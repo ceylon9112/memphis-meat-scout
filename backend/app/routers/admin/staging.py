@@ -72,6 +72,16 @@ async def trigger_discovery(username: str = Depends(verify_token)):
     return result
 
 
+@router.post("/staging/auto-approve")
+async def bulk_auto_approve(username: str = Depends(verify_token)):
+    """Immediately promote all pending staged deals that meet the confidence threshold."""
+    from ...services.discovery import auto_approve_pending
+    db = get_db()
+    approved = await auto_approve_pending(db)
+    remaining = await db.staged_deals.count_documents({"status": "pending"})
+    return {"auto_approved": approved, "still_pending": remaining}
+
+
 @router.post("/staging/{staged_id}/approve", status_code=201)
 async def approve_staged(
     staged_id: str,
