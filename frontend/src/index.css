@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-cream text-charcoal;
+    min-height: 100dvh;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Oswald', Impact, sans-serif;
+  }
+}
+
+@layer utilities {
+  .min-tap {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

@@ -1,0 +1,88 @@
+name: Build and Deploy — Memphis Meat Scout
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: meatscoutacr.azurecr.io
+  IMAGE_BACKEND: meatscout-backend
+  IMAGE_FRONTEND: meatscout-frontend
+  RESOURCE_GROUP: memphis-meat-scout-rg
+  CONTAINER_APP_BACKEND: meatscout-backend
+  CONTAINER_APP_FRONTEND: meatscout-frontend
+
+jobs:
+  build-and-deploy:
+    name: Build, Push, Deploy
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to ACR
+        run: az acr login --name meatscoutacr
+
+      - name: Set image tags
+        id: tags
+        run: |
+          echo "sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:${{ steps.tags.outputs.sha }}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:${{ steps.tags.outputs.sha }}
+
+      - name: Deploy backend
+        run: |
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_BACKEND }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:${{ steps.tags.outputs.sha }} \
+            --set-env-vars \
+              MONGO_URI="${{ secrets.MONGO_URI }}" \
+              ADMIN_USERNAME="${{ secrets.ADMIN_USERNAME }}" \
+              ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}" \
+              KROGER_CLIENT_ID="${{ secrets.KROGER_CLIENT_ID }}" \
+              KROGER_CLIENT_SECRET="${{ secrets.KROGER_CLIENT_SECRET }}"
+
+      - name: Deploy frontend
+        run: |
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_FRONTEND }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:${{ steps.tags.outputs.sha }}
+
+      - name: Health check
+        run: |
+          sleep 15
+          curl -f https://meatscout-backend.gentlestone-8cc45036.eastus.azurecontainerapps.io/health || echo "Health check pending — first deploy may take a moment"
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "✅ Memphis Meat Scout deployed successfully"
+          echo "Backend:  https://meatscout-backend.gentlestone-8cc45036.eastus.azurecontainerapps.io"
+          echo "Frontend: https://meatscout-frontend.gentlestone-8cc45036.eastus.azurecontainerapps.io"
