@@ -67,6 +67,9 @@ jobs:
             --name ${{ env.CONTAINER_APP_BACKEND }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:${{ steps.tags.outputs.sha }} \
+            --registry-server ${{ env.REGISTRY }} \
+            --registry-username ${{ secrets.AZURE_CLIENT_ID }} \
+            --registry-password "${{ secrets.AZURE_CLIENT_SECRET }}" \
             --set-env-vars "MONGO_URI=${{ secrets.MONGO_URI }}" "ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}" "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" "KROGER_CLIENT_ID=${{ secrets.KROGER_CLIENT_ID }}" "KROGER_CLIENT_SECRET=${{ secrets.KROGER_CLIENT_SECRET }}"
 
       - name: Deploy frontend
@@ -74,7 +77,10 @@ jobs:
           az containerapp update \
             --name ${{ env.CONTAINER_APP_FRONTEND }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:${{ steps.tags.outputs.sha }}
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:${{ steps.tags.outputs.sha }} \
+            --registry-server ${{ env.REGISTRY }} \
+            --registry-username ${{ secrets.AZURE_CLIENT_ID }} \
+            --registry-password "${{ secrets.AZURE_CLIENT_SECRET }}"
 
       - name: Health check
         run: |
