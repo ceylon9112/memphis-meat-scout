@@ -11,12 +11,36 @@ variables (set as Azure Container App secrets):
 Docs: https://developer.kroger.com/api-products/api/products-api
 """
 import os
+import re
 import base64
 import httpx
 from datetime import datetime, timedelta
 from typing import Optional
 
 from .cut_matcher import match_cut, is_meat_product, infer_price_unit
+
+# Kroger's API encodes ® as "Ar" stuck to the preceding word (UTF-8 double-encode artifact)
+_TRADEMARK_RE = re.compile(r'(?<=[A-Za-z])Ar(?=\s|$)|[®™©]')
+
+# Processed/shelf-stable products that should not surface as fresh meat deals
+_SKIP_KEYWORDS = {
+    "hash", "canned", "jerky", "sticks", "snack", "snacks", "spam",
+    "luncheon", "vienna sausage", "deviled", "chili", "soup",
+    "frozen patties", "burger patties", "seasoned patties",
+    "cocktail franks", "corn dog",
+}
+
+
+def _clean_desc(desc: str) -> str:
+    """Strip trademark artifacts and return a clean product description."""
+    cleaned = _TRADEMARK_RE.sub('', desc)
+    return re.sub(r'\s{2,}', ' ', cleaned).strip()
+
+
+def _is_fresh_cut(desc: str) -> bool:
+    """Return False for processed/shelf-stable products that aren't fresh cuts."""
+    low = desc.lower()
+    return not any(kw in low for kw in _SKIP_KEYWORDS)
 
 KROGER_BASE = "https://api.kroger.com/v1"
 
@@ -137,8 +161,9 @@ async def fetch_kroger_deals() -> list[dict]:
                         continue
 
                     for product in resp.json().get("data", []):
-                        desc = (product.get("description") or "").strip()
-                        if not desc or not is_meat_product(desc):
+                        raw_desc = (product.get("description") or "").strip()
+                        desc = _clean_desc(raw_desc)
+                        if not desc or not is_meat_product(desc) or not _is_fresh_cut(desc):
                             continue
 
                         for item in product.get("items", []):
