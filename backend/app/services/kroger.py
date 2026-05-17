@@ -1,11 +1,12 @@
 """
-Kroger Developer API client.
+Kroger Developer API client — real-time product prices.
 
-Free account + client credentials required:
-  https://developer.kroger.com → Create App → copy Client ID and Secret
-  Add to backend/.env:
-    KROGER_CLIENT_ID=your_client_id
-    KROGER_CLIENT_SECRET=your_client_secret
+Uses OAuth2 client credentials flow. Credentials are read from environment
+variables (set as Azure Container App secrets):
+
+  KROGER_CLIENT_ID       — developer.kroger.com Client ID
+  KROGER_CLIENT_SECRET   — developer.kroger.com Client Secret
+  KROGER_LOCATION_ID     — specific store location ID (e.g. 02500419)
 
 Docs: https://developer.kroger.com/api-products/api/products-api
 """
@@ -18,27 +19,38 @@ from typing import Optional
 from .cut_matcher import match_cut, is_meat_product, infer_price_unit
 
 KROGER_BASE = "https://api.kroger.com/v1"
-MEMPHIS_ZIP = "38103"
-SEARCH_RADIUS_MILES = 35
 
-# Search terms targeted at our cut list
+# All canonical meat categories we want to pull prices for
 SEARCH_TERMS = [
-    "beef brisket", "chuck roast", "short ribs", "ribeye steak",
-    "skirt steak", "tri tip", "ground beef",
-    "baby back ribs", "spare ribs", "pork shoulder", "boston butt",
-    "pork tenderloin", "pork chops", "pork loin", "slab bacon",
-    "whole chicken", "chicken thighs", "chicken wings", "leg quarters",
-    "whole turkey", "turkey breast",
-    "catfish", "shrimp", "salmon",
+    # Beef
+    "beef brisket", "chuck roast", "beef short ribs", "ribeye steak",
+    "sirloin steak", "new york strip steak", "t-bone steak", "filet mignon",
+    "skirt steak", "tri tip", "ground beef 80", "ground beef 90",
+    "ground chuck", "lean ground beef",
+    # Pork
+    "baby back ribs", "spare ribs", "st louis ribs", "boston butt",
+    "pork shoulder", "pork tenderloin", "bone-in pork chops",
+    "boneless pork chops", "pork loin", "slab bacon", "hot dogs",
+    "smoked sausage", "bratwurst",
+    # Poultry
+    "whole chicken", "boneless chicken breast", "chicken thighs",
+    "chicken wings", "chicken leg quarters", "whole turkey",
+    "turkey breast", "ground turkey",
+    # Seafood
+    "catfish", "gulf shrimp", "salmon fillet", "tuna steak",
 ]
 
 _token: Optional[str] = None
 _token_expires: Optional[datetime] = None
-_location_ids: list[str] = []
 
 
 def _is_configured() -> bool:
     return bool(os.getenv("KROGER_CLIENT_ID") and os.getenv("KROGER_CLIENT_SECRET"))
+
+
+def _get_location_id() -> str:
+    """Return the configured store location ID, falling back to empty string."""
+    return os.getenv("KROGER_LOCATION_ID", "").strip()
 
 
 async def _get_token(client: httpx.AsyncClient) -> Optional[str]:
@@ -46,7 +58,7 @@ async def _get_token(client: httpx.AsyncClient) -> Optional[str]:
     if _token and _token_expires and datetime.utcnow() < _token_expires:
         return _token
 
-    client_id = os.getenv("KROGER_CLIENT_ID", "")
+    client_id     = os.getenv("KROGER_CLIENT_ID", "")
     client_secret = os.getenv("KROGER_CLIENT_SECRET", "")
     if not client_id or not client_secret:
         return None
@@ -54,7 +66,10 @@ async def _get_token(client: httpx.AsyncClient) -> Optional[str]:
     creds = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
     resp = await client.post(
         f"{KROGER_BASE}/connect/oauth2/token",
-        headers={"Authorization": f"Basic {creds}", "Content-Type": "application/x-www-form-urlencoded"},
+        headers={
+            "Authorization": f"Basic {creds}",
+            "Content-Type":  "application/x-www-form-urlencoded",
+        },
         data={"grant_type": "client_credentials", "scope": "product.compact"},
     )
     if resp.status_code != 200:
@@ -62,56 +77,50 @@ async def _get_token(client: httpx.AsyncClient) -> Optional[str]:
 
     data = resp.json()
     _token = data.get("access_token")
-    expires_in = data.get("expires_in", 1800)
-    _token_expires = datetime.utcnow() + timedelta(seconds=expires_in - 60)
+    _token_expires = datetime.utcnow() + timedelta(seconds=data.get("expires_in", 1800) - 60)
     return _token
 
 
-async def _get_memphis_location_ids(client: httpx.AsyncClient, token: str) -> list[str]:
-    global _location_ids
-    if _location_ids:
-        return _location_ids
+async def _resolve_location_id(client: httpx.AsyncClient, token: str) -> Optional[str]:
+    """Use the env-supplied location ID if available; otherwise discover via zip."""
+    loc_id = _get_location_id()
+    if loc_id:
+        return loc_id
 
+    # Fallback: discover nearest store to Memphis zip
     resp = await client.get(
         f"{KROGER_BASE}/locations",
         headers={"Authorization": f"Bearer {token}"},
-        params={
-            "filter.zipCode": MEMPHIS_ZIP,
-            "filter.radiusMiles": SEARCH_RADIUS_MILES,
-            "filter.limit": 10,
-        },
+        params={"filter.zipCode": "38103", "filter.radiusMiles": 25, "filter.limit": 1},
     )
-    if resp.status_code != 200:
-        return []
-
-    locations = resp.json().get("data", [])
-    _location_ids = [loc["locationId"] for loc in locations]
-    return _location_ids
+    if resp.status_code == 200:
+        locations = resp.json().get("data", [])
+        if locations:
+            return locations[0]["locationId"]
+    return None
 
 
 async def fetch_kroger_deals() -> list[dict]:
     """
-    Returns list of normalized staged deal candidates from Kroger.
-    Returns [] if not configured or API unavailable.
+    Returns normalized deal candidates from the Kroger Products API.
+    Returns [] if credentials are not configured or the API is unavailable.
+    Prefers promotional (sale) prices over regular prices.
     """
     if not _is_configured():
         return []
 
-    results = []
-    seen: set[str] = set()
+    results: list[dict] = []
+    seen:    set[str]   = set()
 
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=20.0) as client:
             token = await _get_token(client)
             if not token:
                 return []
 
-            location_ids = await _get_memphis_location_ids(client, token)
-            if not location_ids:
+            location_id = await _resolve_location_id(client, token)
+            if not location_id:
                 return []
-
-            # Use first location for pricing (prices are similar across metro)
-            location_id = location_ids[0]
 
             for term in SEARCH_TERMS:
                 try:
@@ -119,47 +128,52 @@ async def fetch_kroger_deals() -> list[dict]:
                         f"{KROGER_BASE}/products",
                         headers={"Authorization": f"Bearer {token}"},
                         params={
-                            "filter.term": term,
+                            "filter.term":       term,
                             "filter.locationId": location_id,
-                            "filter.limit": 50,
+                            "filter.limit":      50,
                         },
                     )
                     if resp.status_code != 200:
                         continue
 
                     for product in resp.json().get("data", []):
-                        desc = product.get("description", "")
+                        desc = (product.get("description") or "").strip()
                         if not desc or not is_meat_product(desc):
                             continue
 
                         for item in product.get("items", []):
-                            price_data = item.get("price", {})
+                            price_data = item.get("price") or {}
+                            # Prefer promotional (sale) price; fall back to regular
                             price = price_data.get("promo") or price_data.get("regular")
-                            if not price:
+                            if not price or float(price) <= 0:
                                 continue
 
-                            key = f"kroger:{desc.lower()}:{price}"
+                            is_promo = bool(price_data.get("promo"))
+                            key = f"kroger:{location_id}:{desc.lower()}:{price}"
                             if key in seen:
                                 continue
                             seen.add(key)
 
-                            sold_by = item.get("soldBy", "")
+                            sold_by    = item.get("soldBy", "")
                             cut_name, confidence = match_cut(desc)
                             price_unit = infer_price_unit(desc, sold_by)
 
                             results.append({
-                                "source": "kroger",
-                                "store_name": "Kroger",
-                                "cut_name_raw": desc,
-                                "cut_name_matched": cut_name,
-                                "match_confidence": confidence,
-                                "price": round(float(price), 2),
-                                "price_unit": price_unit,
+                                "source":             "kroger",
+                                "store_name":         "Kroger",
+                                "cut_name_raw":       desc,
+                                "cut_name_matched":   cut_name,
+                                "match_confidence":   confidence,
+                                "price":              round(float(price), 2),
+                                "price_unit":         price_unit,
+                                "source_zip":         "38103",
                                 "source_data": {
-                                    "product_id": product.get("productId"),
+                                    "product_id":  product.get("productId"),
                                     "location_id": location_id,
-                                    "sold_by": sold_by,
-                                    "size": item.get("size"),
+                                    "sold_by":     sold_by,
+                                    "size":        item.get("size"),
+                                    "is_promo":    is_promo,
+                                    "regular_price": price_data.get("regular"),
                                 },
                             })
                 except Exception:
