@@ -59,11 +59,13 @@ async def staging_status(username: str = Depends(verify_token)):
     db = get_db()
     pending       = await db.staged_deals.count_documents({"status": "pending"})
     vendor_pend   = await db.staged_deals.count_documents({"status": "vendor_pending"})
+    price_flagged = await db.staged_deals.count_documents({"status": "price_flagged"})
     new_stores    = await db.vendors.count_documents({"auto_created": True})
     last_run      = get_last_run()
     return {
         "pending": pending,
         "vendor_pending": vendor_pend,
+        "price_flagged": price_flagged,
         "new_stores": new_stores,
         "running": is_running(),
         "last_run": last_run.isoformat() if last_run else None,

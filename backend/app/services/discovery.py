@@ -24,11 +24,12 @@ from .ramons import fetch_ramons_deals
 from .traderjoes import fetch_traderjoes_deals
 from .wholefoods import fetch_wholefoods_deals
 from .freshmarket import fetch_freshmarket_deals
+from .cut_matcher import is_price_sane
 
 _last_run: datetime | None = None
 _running: bool = False
 
-AUTO_APPROVE_THRESHOLD = 0.70
+AUTO_APPROVE_THRESHOLD = 0.30   # publish-first: user flagging handles quality control
 
 # One representative zip per market — Flipp covers all stores within ~25 mi
 MARKET_ZIPS = [
@@ -138,30 +139,26 @@ async def auto_approve_pending(db) -> int:
         vendor = await _find_vendor(db, doc["store_name"], source_zip)
 
         if not vendor:
-            # Auto-create a vendor stub so the admin can review it
-            existing_stub = await db.vendors.find_one({
-                "name": doc["store_name"],
-                "auto_created": True,
-            })
-            if not existing_stub:
+            # Auto-create AND immediately activate a vendor stub.
+            # The store passed the FOOD_MERCHANTS filter so it's a real food retailer.
+            existing = await db.vendors.find_one({"name": doc["store_name"]})
+            if existing:
+                vendor = existing
+            else:
                 city, state = await _zip_to_location(source_zip or "38103")
                 stub = {
                     "name": doc["store_name"],
                     "city": city,
                     "state": state,
                     "type": "chain",
-                    "active": False,
+                    "active": True,          # publish immediately
                     "featured": False,
                     "auto_created": True,
                     "zip_code": source_zip,
                     "created_at": now,
                 }
-                await db.vendors.insert_one(stub)
-            await db.staged_deals.update_one(
-                {"_id": doc["_id"]},
-                {"$set": {"status": "vendor_pending"}},
-            )
-            continue
+                result_v = await db.vendors.insert_one(stub)
+                vendor = await db.vendors.find_one({"_id": result_v.inserted_id})
 
         # Resolve cut
         cut = await db.meat_cuts.find_one({"name": doc["cut_name_matched"], "active": True})
@@ -171,6 +168,16 @@ async def auto_approve_pending(db) -> int:
                 "active": True,
             })
         if not cut:
+            continue
+
+        # Price sanity check — skip obvious scraping errors
+        price_unit = doc.get("price_unit", "per_lb")
+        price_val  = round(float(doc["price"]), 2)
+        if not is_price_sane(doc["cut_name_matched"], price_val, price_unit):
+            await db.staged_deals.update_one(
+                {"_id": doc["_id"]},
+                {"$set": {"status": "price_flagged"}},
+            )
             continue
 
         # Skip if identical deal already active today
@@ -190,8 +197,8 @@ async def auto_approve_pending(db) -> int:
         deal = {
             "vendor_id": vendor["_id"],
             "cut_id": cut["_id"],
-            "price": round(float(doc["price"]), 2),
-            "price_unit": doc.get("price_unit", "per_lb"),
+            "price": price_val,
+            "price_unit": price_unit,
             "verified_date": doc.get("found_date") or today,
             "sale_end_date": doc.get("sale_end_date"),
             "notes": (

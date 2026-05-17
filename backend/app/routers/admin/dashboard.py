@@ -34,10 +34,14 @@ async def dashboard(username: str = Depends(verify_token)):
         {"active": True, "verified_date": {"$lt": cutoff}}
     )
     active_vendors = await db.vendors.count_documents({"active": True})
+    flagged_deals  = await db.deals.count_documents({"flagged": True, "active": True})
+    price_flagged  = await db.staged_deals.count_documents({"status": "price_flagged"})
 
     return {
         "active_deals": active_deals,
         "expiring_soon": expiring_soon,
         "stale_deals": stale_deals,
         "active_vendors": active_vendors,
+        "flagged_deals": flagged_deals,
+        "price_flagged": price_flagged,
     }

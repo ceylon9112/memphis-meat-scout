@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import { flagDeal } from '../api/client'
+
 const UNIT_LABELS = {
   per_lb:   '/lb',
   per_unit: '/unit',
@@ -11,41 +14,44 @@ function formatDate(dateStr) {
   return `${months[parseInt(m, 10) - 1]} ${parseInt(d, 10)}`
 }
 
-/*
-  Category styles — vivid enough to read on a white/warm card,
-  using the outdoor lifestyle palette:
-    beef    → ember red (the BBQ star)
-    pork    → warm rose
-    poultry → amber/golden-hour
-    seafood → sky blue (fishing vibes)
-    other   → forest green (outdoors)
-*/
 const categoryStyles = {
-  beef:    {
-    pill: 'bg-ember/12 text-ember border border-ember/30 font-semibold',
-    accent: '#C8471A',
-  },
-  pork:    {
-    pill: 'bg-rose-500/12 text-rose-700 border border-rose-400/30 font-semibold',
-    accent: 'rgba(244,63,94,0.08)',
-  },
-  poultry: {
-    pill: 'bg-amber/12 text-amber border border-amber/30 font-semibold',
-    accent: 'rgba(196,132,26,0.08)',
-  },
-  seafood: {
-    pill: 'bg-sky/12 text-sky border border-sky/30 font-semibold',
-    accent: 'rgba(91,143,168,0.08)',
-  },
-  other:   {
-    pill: 'bg-forest/12 text-forest border border-forest/30 font-semibold',
-    accent: 'rgba(74,124,89,0.06)',
-  },
+  beef:    { pill: 'bg-ember/12 text-ember border border-ember/30 font-semibold',         accent: '#C8471A' },
+  pork:    { pill: 'bg-rose-500/12 text-rose-700 border border-rose-400/30 font-semibold', accent: 'rgba(244,63,94,0.08)' },
+  poultry: { pill: 'bg-amber/12 text-amber border border-amber/30 font-semibold',         accent: 'rgba(196,132,26,0.08)' },
+  seafood: { pill: 'bg-sky/12 text-sky border border-sky/30 font-semibold',               accent: 'rgba(91,143,168,0.08)' },
+  other:   { pill: 'bg-forest/12 text-forest border border-forest/30 font-semibold',      accent: 'rgba(74,124,89,0.06)' },
+}
+
+const FLAG_KEY = 'mms_flagged'
+
+function hasFlagged(id) {
+  try { return JSON.parse(localStorage.getItem(FLAG_KEY) || '[]').includes(id) } catch { return false }
+}
+function markFlagged(id) {
+  try {
+    const list = JSON.parse(localStorage.getItem(FLAG_KEY) || '[]')
+    if (!list.includes(id)) localStorage.setItem(FLAG_KEY, JSON.stringify([...list, id]))
+  } catch {}
 }
 
 export default function DealCard({ deal }) {
-  const { vendor_name, cut_name, price, price_unit, verified_date, notes, category } = deal
+  const { id, vendor_name, cut_name, price, price_unit, verified_date, notes, category } = deal
   const styles = categoryStyles[category] || categoryStyles.other
+
+  const [flagState, setFlagState] = useState(hasFlagged(id) ? 'done' : 'idle')
+
+  const handleFlag = async (e) => {
+    e.stopPropagation()
+    if (flagState !== 'idle') return
+    setFlagState('sending')
+    try {
+      await flagDeal(id)
+      markFlagged(id)
+      setFlagState('done')
+    } catch {
+      setFlagState('idle')
+    }
+  }
 
   return (
     <div className="glass-card overflow-hidden">
@@ -73,9 +79,25 @@ export default function DealCard({ deal }) {
           <span className={`text-xs px-2.5 py-0.5 rounded-full capitalize ${styles.pill}`}>
             {category}
           </span>
-          <span className="text-xs text-driftwood flex items-center gap-1">
-            <span className="text-forest">✓</span> Verified {formatDate(verified_date)}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-driftwood flex items-center gap-1">
+              <span className="text-forest">✓</span> Verified {formatDate(verified_date)}
+            </span>
+            {/* Community flag — non-intrusive, tucked next to date */}
+            <button
+              onClick={handleFlag}
+              disabled={flagState !== 'idle'}
+              title={flagState === 'done' ? 'Thanks for the feedback!' : 'Report incorrect info'}
+              className={`text-xs transition-colors ${
+                flagState === 'done'
+                  ? 'text-driftwood/40 cursor-default'
+                  : 'text-driftwood/40 hover:text-amber active:scale-90'
+              }`}
+              aria-label="Report deal"
+            >
+              {flagState === 'sending' ? '…' : flagState === 'done' ? '⚑' : '⚐'}
+            </button>
+          </div>
         </div>
 
         {notes && (

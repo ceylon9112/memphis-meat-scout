@@ -12,6 +12,7 @@ api.interceptors.request.use((config) => {
 // ─── Public ──────────────────────────────────────────────────────────────────
 
 export const getDeals = (params = {}) => api.get('/deals', { params }).then(r => r.data)
+export const flagDeal = (id) => api.post(`/deals/${id}/flag`).then(r => r.data)
 export const getCuts = () => api.get('/cuts').then(r => r.data)
 export const getCutPrices = (id) => api.get(`/cuts/${id}/prices`).then(r => r.data)
 export const getVendors = (params = {}) => api.get('/vendors', { params }).then(r => r.data)
