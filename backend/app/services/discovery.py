@@ -291,16 +291,19 @@ async def run_discovery() -> dict:
                 "created_at": datetime.utcnow(),
             })
 
-        if to_insert:
-            await db.staged_deals.insert_many(to_insert)
+        # Insert in small batches to avoid Cosmos DB request-rate limits (RU/s)
+        BATCH = 25
+        for i in range(0, len(to_insert), BATCH):
+            batch = to_insert[i : i + BATCH]
+            try:
+                await db.staged_deals.insert_many(batch, ordered=False)
+            except Exception as be:
+                summary["errors"].append(f"batch insert: {str(be)[:120]}")
+            if i + BATCH < len(to_insert):
+                await asyncio.sleep(0.3)
 
         for doc in to_insert:
             summary[doc["source"]] = summary.get(doc["source"], 0) + 1
-
-        stubs_before = await db.vendors.count_documents({"auto_created": True})
-        summary["auto_approved"] = await auto_approve_pending(db)
-        stubs_after = await db.vendors.count_documents({"auto_created": True})
-        summary["vendor_stubs_created"] = stubs_after - stubs_before
 
         _last_run = datetime.utcnow()
         summary["status"] = "ok"
@@ -309,6 +312,17 @@ async def run_discovery() -> dict:
     except Exception as e:
         summary["status"] = "error"
         summary["errors"].append(str(e))
+
+    # Always run auto-approve — even if some inserts hit rate limits,
+    # any staged deals that made it in should go live.
+    try:
+        db2 = get_db()
+        stubs_before = await db2.vendors.count_documents({"auto_created": True})
+        summary["auto_approved"] = await auto_approve_pending(db2)
+        stubs_after = await db2.vendors.count_documents({"auto_created": True})
+        summary["vendor_stubs_created"] = stubs_after - stubs_before
+    except Exception as ae:
+        summary["errors"].append(f"auto_approve: {str(ae)[:120]}")
     finally:
         _running = False
 
