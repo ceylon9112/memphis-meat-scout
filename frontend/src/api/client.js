@@ -51,8 +51,16 @@ export const adminDeactivateCut = (id) => adminUpdateCut(id, { active: false })
 // ─── Admin staging ────────────────────────────────────────────────────────────
 
 export const getStagingStatus = () => api.get('/admin/staging/status').then(r => r.data)
-export const getStagedDeals = (status = 'pending') => api.get('/admin/staging', { params: { status } }).then(r => r.data)
+export const getStagedDeals = (status = 'pending', params = {}) =>
+  api.get('/admin/staging', { params: { status, ...params } }).then(r => r.data)
 export const runDiscovery = () => api.post('/admin/staging/run').then(r => r.data)
 export const approveStaged = (id, data) => api.post(`/admin/staging/${id}/approve`, data).then(r => r.data)
-export const dismissStaged = (id) => api.post(`/admin/staging/${id}/dismiss`).then(r => r.data)
+export const dismissStaged = (id) => api.post(`/admin/staging/${id}/dismiss`)
+export const bulkDismiss = (body) => api.post('/admin/staging/bulk-dismiss', body).then(r => r.data)
 export const clearDismissed = () => api.delete('/admin/staging/dismissed').then(r => r.data)
+export const autoApprove = () => api.post('/admin/staging/auto-approve').then(r => r.data)
+
+// New-stores (vendor stub) flow
+export const getNewStores = () => api.get('/admin/staging/new-stores').then(r => r.data)
+export const activateVendorStub = (data) => api.post('/admin/staging/activate-vendor', data).then(r => r.data)
+export const dismissVendorStub = (id) => api.delete(`/admin/staging/new-stores/${id}`).then(r => r.data)

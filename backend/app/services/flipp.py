@@ -20,8 +20,10 @@ FOOD_MERCHANTS = {
     "kroger", "aldi", "market place", "superlo foods", "sprouts farmers market",
     "gene stimson big star", "restaurant depot", "walmart", "piggly wiggly",
     "food lion", "save a lot", "winn-dixie", "target", "costco", "sams club",
-    "whole foods", "trader joe's", "publix", "food city", "h.g. hill",
-    "natural grocers", "western supermarkets",
+    "sam's club", "whole foods", "trader joe's", "publix", "food city",
+    "h.g. hill", "natural grocers", "western supermarkets",
+    "rouse's", "rouses", "rouse's supermarkets", "greer's", "greer's markets",
+    "greer's market", "eastern shore meat market",
 }
 
 MEAT_KEYWORDS = [
@@ -134,6 +136,7 @@ async def fetch_flipp_deals(postal_code: str = DEFAULT_ZIP) -> list[dict]:
                         "price": round(price, 2),
                         "price_unit": price_unit,
                         "sale_end_date": item_sale_end,
+                        "source_zip": postal_code,
                         "source_data": {
                             "flyer_id": fid,
                             "item_id": item.get("id"),

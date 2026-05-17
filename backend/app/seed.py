@@ -204,7 +204,54 @@ VENDOR_SEED = [
     {"name": "Costco",
      "city": "Knoxville", "state": "TN", "type": "chain",
      "zip_code": "37922", "lat": 35.925, "lng": -84.100},
-]
+
+    # ── Mobile, AL ──────────────────────────────────────────────────────────
+    # Rouse's is the dominant local/regional supermarket in the Gulf Coast market
+    {"name": "Rouse's Supermarkets",
+     "city": "Mobile", "state": "AL", "type": "chain",
+     "zip_code": "36606", "lat": 30.682, "lng": -88.121,
+     "address": "2620 Dauphin St"},
+    {"name": "Rouse's Supermarkets",
+     "city": "Daphne", "state": "AL", "type": "chain",
+     "zip_code": "36526", "lat": 30.679, "lng": -87.897,
+     "address": "29025 US-98"},
+    # Greer's — Mobile-founded regional chain, strong local following
+    {"name": "Greer's Markets",
+     "city": "Mobile", "state": "AL", "type": "independent",
+     "zip_code": "36608", "lat": 30.697, "lng": -88.112},
+    # Eastern Shore Meat Market — specialty butcher, Spanish Fort area
+    {"name": "Eastern Shore Meat Market",
+     "city": "Spanish Fort", "state": "AL", "type": "specialty",
+     "zip_code": "36527", "lat": 30.673, "lng": -87.867,
+     "address": "30500 AL-181"},
+    # Chains present in Mobile
+    {"name": "Publix",
+     "city": "Mobile", "state": "AL", "type": "chain",
+     "zip_code": "36608", "lat": 30.698, "lng": -88.143},
+    {"name": "Winn-Dixie",
+     "city": "Mobile", "state": "AL", "type": "chain",
+     "zip_code": "36606", "lat": 30.681, "lng": -88.083},
+    {"name": "ALDI",
+     "city": "Mobile", "state": "AL", "type": "chain",
+     "zip_code": "36695", "lat": 30.624, "lng": -88.177},
+    {"name": "Walmart",
+     "city": "Mobile", "state": "AL", "type": "chain",
+     "zip_code": "36619", "lat": 30.619, "lng": -88.181},
+    {"name": "Piggly Wiggly",
+     "city": "Mobile", "state": "AL", "type": "chain",
+     "zip_code": "36605", "lat": 30.658, "lng": -88.069},
+    {"name": "Target",
+     "city": "Mobile", "state": "AL", "type": "chain",
+     "zip_code": "36695", "lat": 30.626, "lng": -88.178},
+    {"name": "Costco",
+     "city": "Mobile", "state": "AL", "type": "chain",
+     "zip_code": "36619", "lat": 30.618, "lng": -88.179},
+    {"name": "Sam's Club",
+     "city": "Mobile", "state": "AL", "type": "wholesale",
+     "zip_code": "36619", "lat": 30.617, "lng": -88.177},
+    {"name": "Western Supermarkets",
+     "city": "Mobile", "state": "AL", "type": "independent",
+     "zip_code": "36608", "lat": 30.696, "lng": -88.135},
 # fmt: on
 
 CUT_SEED = [
@@ -262,10 +309,11 @@ async def seed_database():
     for v in VENDOR_SEED:
         geo_update = {k: v[k] for k in GEO_FIELDS if k in v}
         await db.vendors.update_one(
-            {"name": v["name"]},
+            {"name": v["name"], "city": v["city"]},    # unique per name+city
             {
                 "$setOnInsert": {**{k: val for k, val in v.items() if k not in geo_update},
-                                 "active": True, "featured": False, "created_at": now},
+                                 "active": True, "featured": False,
+                                 "auto_created": False, "created_at": now},
                 "$set": geo_update,
             },
             upsert=True,
