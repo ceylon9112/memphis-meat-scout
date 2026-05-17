@@ -74,6 +74,25 @@ VENDOR_SEED = [
      "city": "Memphis", "state": "TN", "type": "chain",
      "zip_code": "38104", "lat": 35.141, "lng": -89.987},
 
+    # Piggly Wiggly — strong Memphis/Mid-South presence
+    {"name": "Piggly Wiggly",
+     "city": "Memphis", "state": "TN", "type": "chain",
+     "zip_code": "38106", "lat": 35.103, "lng": -90.044},
+    {"name": "Piggly Wiggly",
+     "city": "Jackson", "state": "MS", "type": "chain",
+     "zip_code": "39204", "lat": 32.293, "lng": -90.216},
+
+    # Food Lion — Southeast / Appalachian markets
+    {"name": "Food Lion",
+     "city": "Knoxville", "state": "TN", "type": "chain",
+     "zip_code": "37917", "lat": 35.990, "lng": -83.940},
+    {"name": "Food Lion",
+     "city": "Birmingham", "state": "AL", "type": "chain",
+     "zip_code": "35206", "lat": 33.540, "lng": -86.741},
+    {"name": "Food Lion",
+     "city": "Nashville", "state": "TN", "type": "chain",
+     "zip_code": "37210", "lat": 36.143, "lng": -86.749},
+
     # ── Nashville, TN ────────────────────────────────────────────────────────
     {"name": "Kroger",
      "city": "Nashville", "state": "TN", "type": "chain",

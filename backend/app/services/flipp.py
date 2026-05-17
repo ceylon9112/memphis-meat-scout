@@ -20,7 +20,8 @@ FOOD_MERCHANTS = {
     "kroger", "aldi", "market place", "superlo foods", "sprouts farmers market",
     "gene stimson big star", "restaurant depot", "walmart", "piggly wiggly",
     "food lion", "save a lot", "winn-dixie", "target", "costco", "sams club",
-    "whole foods", "trader joe's",
+    "whole foods", "trader joe's", "publix", "food city", "h.g. hill",
+    "natural grocers", "western supermarkets",
 }
 
 MEAT_KEYWORDS = [
