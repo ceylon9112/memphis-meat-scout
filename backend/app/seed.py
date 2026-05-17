@@ -252,6 +252,7 @@ VENDOR_SEED = [
     {"name": "Western Supermarkets",
      "city": "Mobile", "state": "AL", "type": "independent",
      "zip_code": "36608", "lat": 30.696, "lng": -88.135},
+]
 # fmt: on
 
 CUT_SEED = [
